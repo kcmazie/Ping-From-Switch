@@ -55,7 +55,7 @@ The XML file broken down into multiple sections each of which falls under the se
         <BrowserEnable>$true</BrowserEnable>
     </General>
     <Credentials>
-  		<CredDrive>c:</CredDrive>
+        <CredDrive>c:</CredDrive>
         <PasswordFile>Pass.txt</PasswordFile>
         <KeyFile>Key.txt</KeyFile>
     </Credentials>    
