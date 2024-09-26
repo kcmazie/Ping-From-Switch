@@ -34,9 +34,10 @@ Param(
                    : 
     Last Update by : Kenneth C. Mazie                                           
    Version History : v1.00 - 09-20-24 - Original release
-    Change History : v1.10 - 00-00-00 - 
+    Change History : v1.10 - 09-26-24 - Fixed some minor typos.  Added color to explenation.  Added color thresholds 
+                   :                    to  XML file.  Moved ping count to XML.
                    : #>
-        $ScriptVer = "1.00"    <#--[ Current version # used in script ]--
+        $ScriptVer = "1.10"    <#--[ Current version # used in script ]--
 ==============================================================================#>
 Clear-Host
 #Requires -version 5
@@ -44,7 +45,6 @@ Clear-Host
 #--[ Variables ]---------------------------------------------------------------
 $DateTime = Get-Date -Format MM-dd-yyyy_HH:mm:ss  
 $Columns = 7  #--[ Total columns in report ]--
-$Repeat = 15  #--[ How many pings to send ]--
 
 #==[ RUNTIME TESTING OPTION VARIATIONS ]========================================
 $Console = $true
@@ -144,7 +144,10 @@ Function LoadConfig ($Config, $ExtOption){
     If ($Config -ne "failed"){
         $ExtOption | Add-Member -Force -MemberType NoteProperty -Name "Domain" -Value $Config.Settings.General.Domain    
         $ExtOption | Add-Member -Force -MemberType NoteProperty -Name "SourceIP" -Value $Config.Settings.General.SourceIP
-        $ExtOption | Add-Member -Force -MemberType NoteProperty -Name "BrowserEnable" -Value $Config.Settings.General.BrowserEnable        
+        $ExtOption | Add-Member -Force -MemberType NoteProperty -Name "BrowserEnable" -Value $Config.Settings.General.BrowserEnable  
+        $ExtOption | Add-Member -Force -MemberType NoteProperty -Name "Badping" -Value $Config.Settings.General.BadPing  
+        $ExtOption | Add-Member -Force -MemberType NoteProperty -Name "PoorPing" -Value $Config.Settings.General.PoorPing  
+        $ExtOption | Add-Member -Force -MemberType NoteProperty -Name "Repeat" -Value $Config.Settings.General.Repeat
         $ExtOption | Add-Member -Force -MemberType NoteProperty -Name "CredDrive" -Value $Config.Settings.Credentials.CredDrive
         $ExtOption | Add-Member -Force -MemberType NoteProperty -Name "PasswordFile" -Value $Config.Settings.Credentials.PasswordFile
         $ExtOption | Add-Member -Force -MemberType NoteProperty -Name "KeyFile" -Value $Config.Settings.Credentials.KeyFile
@@ -169,6 +172,9 @@ Function LoadConfig ($Config, $ExtOption){
         <Domain>company.org</Domain>
         <SourceIP>10.10.10.1</SourceIP>
         <BrowserEnable>$true</BrowserEnable>
+        <BadPing>100</BadPing>
+        <PoorPing>50</PoorPing>
+        <Repeat>15</Repeat>
     </General>
     <Credentials>
   		<CredDrive>c:</CredDrive>
@@ -299,10 +305,10 @@ $HtmlData = '
         <tr>
             <td><strong><center>Source IP</center></td>
             <td><strong><center>Source Description</center></td>
-            <td><strong><center>% success of '+$Repeat+' pings</center></td>
-            <td><strong><center>Fastest of '+$Repeat+' Pings</center></td>
-            <td><strong><center>Slowest of '+$Repeat+' Pings</center></td>            
-            <td><strong><center>Average of '+$Repeat+' Pings</center></td>
+            <td><strong><center>% success of '+$ExtOption.Repeat+' pings</center></td>
+            <td><strong><center>Fastest of '+$ExtOption.Repeat+' Pings</center></td>
+            <td><strong><center>Slowest of '+$ExtOption.Repeat+' Pings</center></td>            
+            <td><strong><center>Average of '+$ExtOption.Repeat+' Pings</center></td>
             <td><strong><center>Running Average Ping</center></td>
             </tr>
 '
@@ -313,7 +319,7 @@ If ($Connection){
         $HtmlData += '<td>'+$IP.Split(";")[0]+'</td>'  #--[ column 1 ]--
         $HtmlData += '<td>'+$IP.Split(";")[1]+'</td>'  #--[ column 2 ]--
 
-        $Command = 'ping '+$IP.Split(";")[0]+' repeat '+$Repeat
+        $Command = 'ping '+$IP.Split(";")[0]+' repeat '+$ExtOption.Repeat
         $Response = GetSSH $SourceIP $Command $Credential
 
         ForEach ($Line in $Response){
@@ -325,38 +331,64 @@ If ($Connection){
                 $Av =  ($Line.Split(" ")[9]).Split("/")[1]
                 $Max =  ($Line.Split(" ")[9]).Split("/")[2]
 
-                If ([int]$Percent -lt 100){
-                    $Msg = "  -- Out of "+$Repeat+" pings "+$Percent+" percent were successful."
+                If ([int]$Percent -lt $ExtOption.PoorPing){
+                    $Msg = "  -- Out of "+$ExtOption.Repeat+" pings "+$Percent+" percent were successful."
                     StatusMsg $Msg "Yellow" $ExtOption    
                     $HtmlData += '<td><font color="red"><strong>'+$Percent+' %</font></strong></td>'   #--[ column 3 ]--
                 }Else{
-                    $Msg = "  -- Out of "+$Repeat+" pings "+$Percent+" percent were successful."    #--[ column 3 ]--
+                    $Msg = "  -- Out of "+$ExtOption.Repeat+" pings "+$Percent+" percent were successful."    #--[ column 3 ]--
                     StatusMsg $Msg "green" $ExtOption    
                     $HtmlData += '<td><font color="green">'+$Percent+' %</td>' 
                 }
 
-                StatusMsg "  -- Fastest response $Min ms" "green" $ExtOption
-                $HtmlData += '<td>'+$Min+' ms</td>'     #--[ column 4 ]--
-                StatusMsg "  -- Slowest response $Max ms" "green" $ExtOption
-                $HtmlData += '<td>'+$Max+' ms</td>'     #--[ column 5 ]--
-
-                If ([int]$Av -ge 50){
-                    StatusMsg "  -- Average response $Av ms" "yellow" $ExtOption
-                    $HtmlData += '<td><font color=orange><strong>'+$Av+' ms</strong></font></td>'   #--[ column 6 ]--
+                #--[ Current Fastest ping (column 4) ]--
+                If ([int]$Min -ge $ExtOption.BadPing){
+                    StatusMsg "  -- Fastest response $Min ms" "red" $ExtOption
+                    $HtmlData += '<td><font color=red><strong>'+$Min+' ms</strong></font></td>' 
+                }ElseIf ([int]$Min -ge $ExtOption.PoorPing){
+                    StatusMsg "  -- Fastest response $Min ms" "yellow" $ExtOption
+                    $HtmlData += '<td><font color=orange><strong>'+$Min+' ms</strong></font></td>'
                 }Else{
-                    StatusMsg "  -- Average response $Av ms" "green" $ExtOption
-                    $HtmlData += '<td>'+$Av+' ms</td>'   #--[ column 6 ]--
+                    StatusMsg "  -- Fastest response $Min ms" "green" $ExtOption
+                    $HtmlData += '<td><font color=green>'+$Min+' ms</font></td>' 
+                }
+                
+                #--[ Current Slowest ping (column 5) ]--
+                If ([int]$Max -ge $ExtOption.BadPing){
+                    StatusMsg "  -- Average response $Max ms" "red" $ExtOption
+                    $HtmlData += '<td><font color=red><strong>'+$Max+' ms</strong></font></td>' 
+                }ElseIf ([int]$Max -ge $ExtOption.PoorPing){
+                    StatusMsg "  -- Average response $Max ms" "yellow" $ExtOption
+                    $HtmlData += '<td><font color=orange><strong>'+$Max+' ms</strong></font></td>'
+                }Else{
+                    StatusMsg "  -- Slowest response $Max ms" "green" $ExtOption
+                    $HtmlData += '<td><font color=green>'+$Max+' ms</font></td>' 
                 }
 
-                #--[ Running average ]--
-                [int]$Av = (([int]$Av)+($ObjTracker.($IP.Split(";")[0])))/2
-                $Tracker += ($IP.Split(";")[0])+"="+$Av
-                If ([int]$Av -ge 50){
-                    StatusMsg "  -- Running Average $Av ms" "yellow" $ExtOption
-                    $HtmlData += '<td><font color=orange><strong>'+$Av+' ms</strong></font></td>'   #--[ column 7 ]--
+                #--[ Current Average ping (column 6) ]--
+                If ([int]$Av -ge $ExtOption.BadPing){
+                    StatusMsg "  -- Average response $Av ms" "red" $ExtOption
+                    $HtmlData += '<td><font color=red><strong>'+$Av+' ms</strong></font></td>' 
+                }ElseIf ([int]$Av -ge $ExtOption.PoorPing){
+                    StatusMsg "  -- Average response $Av ms" "yellow" $ExtOption
+                    $HtmlData += '<td><font color=orange><strong>'+$Av+' ms</strong></font></td>' 
                 }Else{
-                    StatusMsg "  -- Running Average $Av ms" "green" $ExtOption
-                    $HtmlData += '<td>'+[int]$Av+' ms</td>'  #--[ column 7 ]--
+                    StatusMsg "  -- Average response $Av ms" "green" $ExtOption
+                    $HtmlData += '<td><font color=green>'+[int]$Av+' ms</font></td>'  
+                }
+
+                #--[ Running average ping (column 7) ]--
+                [int]$RunAv = (([int]$Av)+($ObjTracker.($IP.Split(";")[0])))/2
+                $Tracker += ($IP.Split(";")[0])+"="+$RunAv
+                If ([int]$RunAv -ge $ExtOption.BadPing){
+                    StatusMsg "  -- Running Average $RunAv ms" "red" $ExtOption
+                    $HtmlData += '<td><font color=red><strong>'+$RunAv+' ms</strong></font></td>' 
+                }ElseIf ([int]$RunAv -ge $ExtOption.PoorPing){
+                    StatusMsg "  -- Running Average $RunAv ms" "yellow" $ExtOption
+                    $HtmlData += '<td><font color=orange><strong>'+$RunAv+' ms</strong></font></td>'
+                }Else{
+                    StatusMsg "  -- Running Average $RunAv ms" "green" $ExtOption
+                    $HtmlData += '<td><font color=green>'+$RunAv+' ms</font></td>' 
                 }
             }
         }
@@ -372,22 +404,22 @@ If (Test-Path -PathType leaf ("$PSScriptRoot/$SourceIP-Tracker.log")){
 }
 Add-Content -Path "$PSScriptRoot/$SourceIP-Tracker.log" -Value $Tracker
 
-$HtmlData += "<tr><td colspan="+$Columns+"><h3>Ping results explained:</h3>For simplicity this explenation is from the viewpoint of an 
+$HtmlData += "<tr><td colspan="+$Columns+"><h3>Ping results explained:</h3>For simplicity this explanation is from the viewpoint of an 
 Internet gamer.  Gamers typically require high speed and low latency connections or they are unable to compete online.  The same can be 
 said for network connections at work, a higher ping or latency will cause your applications to be slow or lock up.  Basically the 
 lower your ping, the faster your connection.  A lower ping will make a gamer more competitive, and your applications perform better.  
 That's the general rule, but we can narrow it down more specifically. <br><hr>
-A ""Professional"" ping is 10ms or lower (0.01 seconds):<br>For competitive gamers in battles and tournaments, the slightest delay 
+<font color=green>A ""Professional"" ping is 10ms or lower (0.01 seconds):</font><br>For competitive gamers in battles and tournaments, the slightest delay 
 could mean game over. They want the lowest possible ping, so they're not dropping points or shots because of lag or glitches.<br><hr>
-A ""Pretty decent"" ping is under 20ms (0.02 seconds):<br>Some gamers' idea of fun is live streaming their gameplay.  They aim for a 
+<font color=green>A ""Pretty decent"" ping is under 20ms (0.02 seconds):</font><br>Some gamers' idea of fun is live streaming their gameplay.  They aim for a 
 ping as quick as this. At this level they experience crisp visuals and instant actions with no lag, or choppiness.<br><hr>
-A ""Perfectly average"" ping is between 20ms-50ms (0.02-0.05 seconds):<br>Gamers will try to get below 50ms for playing ultra-competitive 
+<font color=green>A ""Perfectly average"" ping is between 20ms-50ms (0.02-0.05 seconds):</font><br>Gamers will try to get below 50ms for playing ultra-competitive 
 first person shooter and racing games.  Most employer networks should be easily able to match this speed.<br><hr>
-A ""Poor"" ping is between 50ms-100ms (0.05-0.1 seconds):<br>A 100ms or lower ping can be tolerable. But when you're lagging this much, 
+<font color=orange>A ""Poor"" ping is between 50ms-100ms (0.05-0.1 seconds):</font><br>A 100ms or lower ping can be tolerable. But when you're lagging this much, 
 you'll lose the sense that you're playing in real time.  At work you can see slow load times in applications.  This ping range and lag 
 often mean you're connected to a distant server. Depending on your game (or application) and its settings, you might be able to connect 
 to a closer server to improve your ping.<br><hr>
-An ""Unplayable"" ping is between 100ms-300ms (0.1-0.3 seconds):<br>Long delays are expected in this range. In fact, some online games 
+<font color=red>An ""Unplayable"" ping is between 100ms-300ms (0.1-0.3 seconds):</font><br>Long delays are expected in this range. In fact, some online games 
 reject your connection altogether when you're at 170ms or more. Massively multiplayer online games are playable with a high ping, but 
 you'll still want to stay below 250ms. For real-time strategy games or player vs player, you'll need to stay below 150ms. If your ping 
 is this high, you may want to consider another network provider.  At work this would indicate a serious issue with the network.</td>
@@ -400,13 +432,6 @@ StatusMsg "Clearing run variables." "magenta" $ExtOption
 Remove-variable Response -ErrorAction "SilentlyContinue" 
 
 $HtmlData += '</body></html>'
-#<font color=darkcyan><p style="text-align:left;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Script Version: 
-#$ScriptVer<span style="float:right;">Report generated at: $DateTime &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-#&nbsp;&nbsp;&nbsp;</span></p></font>
-
-
-
-
 
 If (Test-Path -PathType leaf ("$PSScriptRoot/Report.html")){
     Remove-Item -Path ("$PSScriptRoot/Report.html") -Force
