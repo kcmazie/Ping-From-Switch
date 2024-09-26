@@ -53,6 +53,9 @@ The XML file broken down into multiple sections each of which falls under the se
         <Domain>company.org</Domain>
         <SourceIP>10.10.10.1</SourceIP>
         <BrowserEnable>$true</BrowserEnable>
+        <BadPing>100</BadPing>
+        <PoorPing>50</PoorPing>
+        <Repeat>15</Repeat>
     </General>
     <Credentials>
         <CredDrive>c:</CredDrive>
@@ -99,5 +102,7 @@ Code snippets and/or ideas came from many sources including but not limited to t
 ### $${\color{grey}Version \\& Change History:}$$ 
 * Last Update by  : Kenneth C. Mazie 
   * Initial Release : v1.00 - 09-20-24 - Original release
-  * Change History  : v1.10 - 00-00-00 - 
+  * Change History :
+  * v1.10 - 09-26-24 - Fixed some minor typos.  Added color to explenation.  Added color thresholds to  XML file.  Moved ping count to XML.
+  * v1.20 - 00-00-00
  </span>
