@@ -78,7 +78,9 @@ The XML file broken down into multiple sections each of which falls under the se
 ```
    
 ### $${\color{grey}Screenshots:}$$ 
-* Coming soon.
+   This is the HTML report that is generated.
+   
+![Initial GUI](https://github.com/kcmazie/Ping-From-Switch/blob/main/Screenshot.jpg "HTML Report")
    
 <!-- ![Initial GUI](https://github.com/kcmazie/Site-Check/blob/main/Screenshot1.jpg "Initial GUI") -->
   
