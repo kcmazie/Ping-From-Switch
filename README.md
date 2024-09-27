@@ -101,10 +101,11 @@ That being said, please let me know if you find bugs, have improved the script, 
 Code snippets and/or ideas came from many sources including but not limited to the following: 
 * Code snippets and/or ideas came from too many sources to list...
   
-### $${\color{grey}Version \\& Change History:}$$ 
+### $${\color{grey}Version \space \\& \space Change \space History:}$$ 
 * Last Update by  : Kenneth C. Mazie 
   * Initial Release : v1.00 - 09-20-24 - Original release
   * Change History :
   * v1.10 - 09-26-24 - Fixed some minor typos.  Added color to explenation.  Added color thresholds to  XML file.  Moved ping count to XML.
+  * v1.11 - 09-27-24 - Expanded on explenation of what "ping" is.
   * v1.20 - 00-00-00
  </span>
