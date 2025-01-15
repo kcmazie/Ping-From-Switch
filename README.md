@@ -107,5 +107,5 @@ Code snippets and/or ideas came from many sources including but not limited to t
   * Change History :
   * v1.10 - 09-26-24 - Fixed some minor typos.  Added color to explenation.  Added color thresholds to  XML file.  Moved ping count to XML.
   * v1.11 - 09-27-24 - Expanded on explenation of what "ping" is.
-  * v1.20 - 00-00-00
+  * v1.20 - 01-14-25 - Added check to compensate for my goofy folder structure when loading in browser.
  </span>
