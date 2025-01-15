@@ -36,8 +36,10 @@ Param(
    Version History : v1.00 - 09-20-24 - Original release
     Change History : v1.10 - 09-26-24 - Fixed some minor typos.  Added color to explenation.  Added color thresholds 
                    :                    to  XML file.  Moved ping count to XML.
-                   : #>
-        $ScriptVer = "1.10"    <#--[ Current version # used in script ]--
+                   : v1.11 - 09-27-24 - Expanded on explenation of what "ping" is.
+                   : v1.20 - 01-14-25 - Added check to compensate for my goofy folder structure when loading in browser.
+                   #>
+                   $ScriptVer = "1.20"    <#--[ Current version # used in script ]--
 ==============================================================================#>
 Clear-Host
 #Requires -version 5
@@ -433,13 +435,18 @@ Remove-variable Response -ErrorAction "SilentlyContinue"
 
 $HtmlData += '</body></html>'
 
-If (Test-Path -PathType leaf ("$PSScriptRoot/Report.html")){
-    Remove-Item -Path ("$PSScriptRoot/Report.html") -Force
+$Report = "$PSScriptRoot/Report.html"
+If (Test-Path -PathType leaf $Report){
+    Remove-Item -Path $Report -Force
 }
 
-Add-Content -Path "$PSScriptRoot/Report.html" -Value $HtmlData 
-If ($ExtOption.BrowserEnable){
-    iex "$PSScriptRoot/Report.html"
+Add-Content -Path $Report -Value $HtmlData 
+Try{
+    If ($ExtOption.BrowserEnable){
+        iex $Report
+    }
+}Catch{
+    StatusMsg "Error loading report locally in browser." "red" $ExtOption
 }
 
 If ($ExtOption.EmailEnable){
