@@ -18,8 +18,9 @@
 ## $${\color{grey}Description:}$$ 
 This script will SSH into the "source" Cisco switch and initiate a number of ICMP "pings" to a list of targets.
   Response times are gathered into an HTML report that is emailed and/or immediately displayed.  Average ping 
-  times are tracked over time for each seperate target switch and displayed during subsequent runs.  If no 
-  source IP is included in the configuration file you are prompted for one. 
+  times are tracked over time for each separate target switch and displayed during subsequent runs.  If no 
+  source IP is included in the configuration file you are prompted for one.  A new GUI has been added to accept
+  target switch input.  Also a baseline ping is now tracked.
 
 Options like user, password, the source IP, and target list are externalized in a companion XML file so that nothing sensitive is contained within the script itself.
 
@@ -34,6 +35,8 @@ Command line options for testing:
 | --------------------------- | ---------------------------------------------------------------------- | ----------------- |
 | Console     | Set to true to enable local console result display. | Defaults to false | 
 | Debug       | Generates extra console output for debugging. | Defaults to false | 
+| Gui         | Enables the Gui mode. | Defaults to false |
+| SourceIP    | Alows placing a source IP on the commandline | Defaults to Null
 
 ## $${\color{grey}Configuration:}$$ 
 The script takes virtually all configuration from the companion XML file.  As previously noted the file must exist and if not found the script will abort.  A message will pop-up showing the basic settings should the file not be found.
@@ -78,7 +81,7 @@ The XML file broken down into multiple sections each of which falls under the se
 ```
    
 ### $${\color{grey}Screenshots:}$$ 
-   This is the HTML report that is generated.
+   This is one version of the HTML report that is generated.
    
 ![Initial GUI](https://github.com/kcmazie/Ping-From-Switch/blob/main/Screenshot.jpg "HTML Report")
    
@@ -89,7 +92,7 @@ The XML file broken down into multiple sections each of which falls under the se
 
 ### $${\color{grey}Enhancements:}$$ 
 Some possible future enhancements are:
-* N/A
+* Availabilty to feed in a list of taregt switch IPs.
 
 ### $${\color{grey}Legal:}$$ 
 Public Domain. Modify and redistribute freely. No rights reserved. 
@@ -99,7 +102,8 @@ That being said, please let me know if you find bugs, have improved the script, 
 
 ### $${\color{grey}Credits:}$$  
 Code snippets and/or ideas came from many sources including but not limited to the following: 
-* Code snippets and/or ideas came from too many sources to list...
+  * https://stackoverflow.com/questions/71760114/posh-ssh-script-on-cisco-devices
+  * Ping explanation text adapted from: https://www.virginmedia.com/blog/gaming/what-is-a-good-ping
   
 ### $${\color{grey}Version \space \\& \space Change \space History:}$$ 
 * Last Update by  : Kenneth C. Mazie 
@@ -108,4 +112,5 @@ Code snippets and/or ideas came from many sources including but not limited to t
   * v1.10 - 09-26-24 - Fixed some minor typos.  Added color to explenation.  Added color thresholds to  XML file.  Moved ping count to XML.
   * v1.11 - 09-27-24 - Expanded on explenation of what "ping" is.
   * v1.20 - 01-14-25 - Added check to compensate for my goofy folder structure when loading in browser.
+  * v2.00 - 07-13-26 - Added GUI option.  Added baseline tracking
  </span>
