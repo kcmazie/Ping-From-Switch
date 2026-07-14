@@ -92,7 +92,7 @@ The XML file broken down into multiple sections each of which falls under the se
 
 ### $${\color{grey}Enhancements:}$$ 
 Some possible future enhancements are:
-* Availabilty to feed in a list of taregt switch IPs.
+* Availabilty to feed in a list of target switch IPs.
 
 ### $${\color{grey}Legal:}$$ 
 Public Domain. Modify and redistribute freely. No rights reserved. 
