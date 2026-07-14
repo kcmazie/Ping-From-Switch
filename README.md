@@ -113,4 +113,5 @@ Code snippets and/or ideas came from many sources including but not limited to t
   * v1.11 - 09-27-24 - Expanded on explenation of what "ping" is.
   * v1.20 - 01-14-25 - Added check to compensate for my goofy folder structure when loading in browser.
   * v2.00 - 07-13-26 - Added GUI option.  Added baseline tracking
+  * v2.10 - 07-14-26 - Fixed logic errors for tracking baseline if no baseline exists
  </span>
