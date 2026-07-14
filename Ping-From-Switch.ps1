@@ -37,8 +37,9 @@
                    : v1.11 - 09-27-24 - Expanded on explenation of what "ping" is.
                    : v1.20 - 01-14-25 - Added check to compensate for my goofy folder structure when loading in browser.
                    : v2.00 - 07-13-26 - Added GUI option.  Added baseline tracking
+                   : v2.10 - 07-14-26 - Fixed logic errors for tracking baseline if no baseline exists
                    #>
-                   $ScriptVer = "2.00"    
+                   $ScriptVer = "2.10"    
                    <#--[ Current version # used in script ]--
 ==============================================================================#>
 Param(
@@ -54,7 +55,7 @@ Clear-Host
 $DateTime = Get-Date -Format MM-dd-yyyy_HH:mm:ss  
 
 #==[ RUNTIME TESTING OPTION VARIATIONS ]========================================
-#$Console = $true
+$Console = $true
 #$Debug = $True 
 $Gui = $True
 If($Debug){
@@ -288,13 +289,6 @@ Function MainProcess ($ExtOption){
     $SourceIP = $ExtOption.SourceIP 
     StatusMsg ('Processing Target Switch: ['+$SourceIP+']') "Green" $ExtOption
 
-    If (Test-Path -PathType leaf ("$PSScriptRoot\$SourceIP-Tracker.log")){
-        $ObjTracker = Get-Content -path ("$PSScriptRoot\$SourceIP-Tracker.log") | ConvertFrom-StringData
-    }Else{
-        write-host "tracker failed"
-        exit
-    }
-
     #--[ Begin Processing of IP List ]--------------------------------------------
     $ErrorActionPreference = "stop"
     $Tracker = @()
@@ -396,8 +390,15 @@ $HtmlData = '
                         $HtmlData += '<td><font color=green>'+[int]$Av+' ms</font></td>'  
                     }
 
+                    If (Test-Path -PathType leaf ("$PSScriptRoot\$SourceIP-Tracker.log")){
+                        $ObjTracker = Get-Content -path ("$PSScriptRoot\$SourceIP-Tracker.log") | ConvertFrom-StringData
+                        [int]$RunAv = (([int]$Av)+(($ObjTracker.($IP.Split(";")[0])).Split("_")[0]))/2
+                    }Else{
+                        $NoBaseline = $True
+                        [int]$RunAv = [int]$Av
+                    }
+
                     #--[ Running average ping (column 7) ]--
-                    [int]$RunAv = (([int]$Av)+(($ObjTracker.($IP.Split(";")[0])).Split("_")[0]))/2
                     If ([int]$RunAv -ge $ExtOption.BadPing){
                         StatusMsg "  -- Running Average $RunAv ms" "red" $ExtOption
                         $HtmlData += '<td><font color=red><strong>'+$RunAv+' ms</strong></font></td>' 
@@ -410,22 +411,25 @@ $HtmlData = '
                     }
 
                     #--[ Baseline value (column 8) ]--
-                    If ($ExtOption.NewBaseline){
+                    If (($ExtOption.NewBaseline) -or ($NoBaseline) -or ($Null -eq $ObjTracker.($IP.Split(";")[0]).Split("_")[1])){
+                        StatusMsg "    -- New Baseline" yellow $ExtOption
                         $Baseline = [int]$RunAv
                     }Else{
-                        If ($Null -eq $ObjTracker.($IP.Split(";")[0]).Split("_")[1]){
-                            write-host "--[ No baseline exists ]--"
-                            $Baseline = $RunAv
-                            #--[ Add new baseline ]--
-                            $Tracker += ($IP.Split(";")[0])+"="+$RunAv+"_"+$Baseline
-                        }Else{
-                            $Baseline = [int]($ObjTracker.($IP.Split(";")[0]).Split("_")[1])
-                            #--[ Perpetuate the pre-existing baseline ]--
-                            $Tracker += ($IP.Split(";")[0])+"="+$RunAv+"_"+$Baseline                 
-                        }
+                        #--[ Perpetuate the pre-existing baseline ]--
+                        $Baseline = [int]($ObjTracker.($IP.Split(";")[0]).Split("_")[1])
+                    }
+                    If ([int]$Baseline -ge $ExtOption.BadPing){
+                        StatusMsg "  -- Baseline $Baseline ms" "red" $ExtOption
+                        $HtmlData += '<td><font color=red><strong>'+$Baseline+' ms</strong></font></td>' 
+                    }ElseIf ([int]$Baseline -ge $ExtOption.PoorPing){
+                        StatusMsg "  -- Baseline $Baseline ms" "yellow" $ExtOption
+                        $HtmlData += '<td><font color=orange><strong>'+$Baseline+' ms</strong></font></td>'
+                    }Else{
                         StatusMsg "  -- Baseline $Baseline ms" "green" $ExtOption
                         $HtmlData += '<td><font color=green>'+$Baseline+' ms</font></td>' 
                     }
+                    $Tracker += ($IP.Split(";")[0])+"="+$RunAv+"_"+$Baseline
+
                 }
             }
             $HtmlData += '</tr>'
